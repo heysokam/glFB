@@ -9,3 +9,4 @@ proc key *(win :glfw.Window; key, code, action, mods :cint) :void {.cdecl.}=
   if (key == glfw.KeyEscape and action == glfw.Press):
     glfw.setWindowShouldClose(win, true)
 
+proc update *() :void=  glfw.pollEvents()

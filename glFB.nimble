@@ -18,6 +18,7 @@ requires "https://github.com/heysokam/nstd#head"
 requires "https://github.com/heysokam/nmath#head"
 requires "https://github.com/heysokam/nglfw#head"
 requires "opengl"
+requires "pixie"
 
 #___________________
 # Folders
