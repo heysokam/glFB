@@ -18,14 +18,14 @@ type Window * = ref object
 #_______________________________________
 # Callbacks
 #___________________
-proc resize *(window :glfw.Window; W,H :cint) :void {.cdecl.}=
+proc resize (window :glfw.Window; W,H :cint) :void {.cdecl.}=
   gl.viewport(0,0, W,H)
 
 
 #_______________________________________
 # Constructor
 #___________________
-proc new *(_:typedesc[Window];
+proc new (_:typedesc[Window];
     size         : UVec2;
     title        : string                  = "glFB | Window";
     resizable    : bool                    = true;
@@ -67,9 +67,9 @@ proc new *(_:typedesc[Window];
 #_______________________________________
 # Behavior
 #__________________
-proc update  *(w :Window) :void=  discard
-proc close   *(w :Window) :bool=  glfw.windowShouldClose(w.ct)
-proc term    *(w :Window) :void=  glfw.destroyWindow(w.ct); glfw.terminate()
+proc update   (w :Window) :void=  discard
+proc close    (w :Window) :bool=  glfw.windowShouldClose(w.ct)
+proc term     (w :Window) :void=  glfw.destroyWindow(w.ct); glfw.terminate()
 proc present *(w :Window) :void=  glfw.swapBuffers(w.ct)
 
 

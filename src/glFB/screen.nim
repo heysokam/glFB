@@ -11,7 +11,7 @@ import nstd/iter
 import nmath
 from nglfw as glfw import nil
 # glFB dependencies
-import ./window
+import ./window{.all.}
 from ./input as i import nil
 from ./gl import nil
 
@@ -23,10 +23,10 @@ type Triangle = object
   tex  :uint32  ## OpenGL Texture handle
 #___________________
 type Screen * = ref object
-  win   :Window              ## Window Object
-  tri   :Triangle            ## Fullscreen Triangle data
+  win   *:Window             ## Window Object
+  tri    :Triangle           ## Fullscreen Triangle data
   pix   *:pixie.Image        ## Pixels Data
-  post  :seq[gl.ShaderProg]  ## Post-Processing shaders
+  post   :seq[gl.ShaderProg] ## Post-Processing shaders
 
 #_______________________________________
 const thisDir  = currentSourcePath().parentDir()

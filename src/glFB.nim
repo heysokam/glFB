@@ -2,6 +2,7 @@
 #  glFB  |  Copyright (C) Ivan Mar (sOkam!)  |  MIT  |
 #:____________________________________________________
 import ./glFB/screen ; export screen
+import ./glFB/window ; export window
 
 #_______________________________________
 # Entry Point for the debug example

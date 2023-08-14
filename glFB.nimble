@@ -7,7 +7,7 @@ import std/strformat
 #___________________
 # Package
 packageName   = "glFB"
-version       = "0.2.1"
+version       = "0.2.2"
 author        = "sOkam"
 description   = "gl*FB | Tiny Framebuffer with OpenGL"
 license       = "MIT"
