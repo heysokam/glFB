@@ -41,17 +41,26 @@ const DbgFrag  = staticRead( shdDir/"debug.frag" )
 #_______________________________________
 # Screen Pixels access
 #___________________
-func data *(scr :Screen) :seq[ColorRGBX]=  scr.pix.data
-  ## Alias for accessing the Screen's pixel data
-func `data=` *(scr :var Screen; data :seq[ColorRGBX]) :void=  scr.pix.data = data
-  ## Alias for assigning new pixel data for the Screen
-func `[]` *(scr :Screen; x,y :Natural) :ColorRGBX=  scr.pix.data[scr.pix.width * y + x]
-  ## Returns the Screen pixel at coordinates (X,Y)
+# Individual pixels
 func `[]=` *(scr :var Screen; x,y :Natural; pix :ColorRGBX) =  scr.pix.data[scr.pix.width * y + x] = pix
   ## Assigns the Screen pixel at coordinates (X,Y) to the given ColorRGBX value
+func `[]` *(scr :Screen; x,y :Natural) :ColorRGBX=
+  ## Returns the Screen pixel at coordinates (X,Y)
+  if (scr.pix.width * y + x) > ( (scr.pix.width-1) * (scr.pix.height-1) ): # If (x,y) > (width-1,height-1)
+    raise newException(PixelIOError, "Tried to access a pixel that's out of bounds of the framebuffer.")
+  result = scr.pix.data[scr.pix.width * y + x]
+#___________________
 iterator pixels *(scr :var Screen) :var ColorRGBX=
   ## Iterate through all pixels of the screen, and yield each pixel as modifiable.
   for pix in iter.twoD(scr.pix.data, scr.pix.width, scr.pix.height): yield pix
+#___________________
+# All pixels at once
+func data *(scr :Screen) :seq[ColorRGBX]=  scr.pix.data
+  ## Alias for accessing the Screen's pixel data
+func `data=` *(scr :var Screen; data :seq[ColorRGBX]) :void=
+  ## Alias for assigning new pixel data for the Screen
+  if data.len != scr.pix.data.len: raise newException(PixelIOError, "Tried to assign pixel data with a buffer with incorrect length.")
+  scr.pix.data = data
 
 #_______________________________________
 # Post-Processing Management

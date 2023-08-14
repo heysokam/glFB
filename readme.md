@@ -22,12 +22,15 @@ scr.term()                              # Terminate everything after
 
 Pixel access ergonomics:
 ```nim
-let data   = scr.data()          # Alias for accessing the Screen's pixel data
-scr.data   = SomeSeqOfColorRGBX  # Alias for pixel buffer data asignation
-let pix    = scr[10,10]          # Returns the pixel data at coordinates [X,Y]
-scr[10,10] = rgbx(0,0,0,0)       # Directly modify a single pixel
+# Individual pixels
+let pix    = scr[10,10]          # Returns a copy of the pixel at coordinates [X,Y]
 for pixel in scr.pixels:         # Access all pixels individually one by one
   pixel = rgbx(0,0,0,0)          # Each item is modifiable, like mitems
+scr[10,10] = rgbx(0,0,0,0)       # Directly modify a single pixel at [X,Y]
+
+# All pixels at once
+let data   = scr.data            # Alias for accessing the entire Screen's pixel data
+scr.data   = SomeSeqOfColorRGBX  # Alias for pixel buffer data asignation all at once (size must match)
 ```
 
 #### Advanced Usage
