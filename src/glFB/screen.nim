@@ -11,6 +11,7 @@ import nstd/iter
 import nmath
 from nglfw as glfw import nil
 # glFB dependencies
+import ./errors
 import ./window{.all.}
 from ./input as i import nil
 from ./gl import nil
