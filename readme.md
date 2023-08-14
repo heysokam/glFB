@@ -31,6 +31,8 @@ scr[10,10] = rgbx(0,0,0,0)       # Directly modify a single pixel at [X,Y]
 # All pixels at once
 let data   = scr.data            # Alias for accessing the entire Screen's pixel data
 scr.data   = SomeSeqOfColorRGBX  # Alias for pixel buffer data asignation all at once (size must match)
+
+# Note: Coordinate (0,0) is at topleft of the screen
 ```
 
 #### Advanced Usage
@@ -132,4 +134,7 @@ scr.term()                            # Terminate everything after
 The GPU is exclusively used for accessing the data, and transfering it into the screen.  
 The only GPU-based processing this library does is applying the list of (optional) Post-Processing effects.  
 This library applies no GPU acceleration anywhere else, which makes it suitable for purely CPU-driven renderers.  
+### Coordinates
+Coordinate (0,0) is topleft of the screen.  
+OpenGL wants 0,0 to be bottomleft, but glFB changes this in the FST vertex shader, so that the buffer is drawn correctly.  
 
