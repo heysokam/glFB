@@ -214,7 +214,7 @@ proc new *(_:typedesc[Screen];
   result.uploadInit()
 #___________________
 proc new *(_:typedesc[Screen];
-    W,H          : SomeInteger;
+    W,H          : Natural;
     pixels       : seq[ColorRGBX];
     title        : string                  = "glFB | Window";
     resizable    : bool                    = false;
@@ -241,7 +241,7 @@ proc new *(_:typedesc[Screen];
   result.pix.data = pixels
 #___________________
 proc new *(_:typedesc[Screen];
-    W,H          : SomeInteger;
+    W,H          : Natural;
     title        : string                  = "glFB | Window";
     resizable    : bool                    = false;
     resize       : glfw.FrameBufferSizeFun = resize;
