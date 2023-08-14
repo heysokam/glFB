@@ -3,6 +3,7 @@
 #:____________________________________________________
 # std dependencies
 import std/os
+import std/paths
 # External dependencies
 import pkg/pixie
 # ndk dependencies
@@ -37,6 +38,30 @@ const TriFrag  = staticRead( shdDir/"tri.frag" )
 const DbgFrag  = staticRead( shdDir/"debug.frag" )
 
 
+#_______________________________________
+# Screen Pixels access
+#___________________
+func data *(scr :Screen) :seq[ColorRGBX]=  scr.pix.data
+  ## Alias for accessing the Screen's pixel data
+func `data=` *(scr :var Screen; data :seq[ColorRGBX]) :void=  scr.pix.data = data
+  ## Alias for assigning new pixel data for the Screen
+func `[]` *(scr :Screen; x,y :Natural) :ColorRGBX=  scr.pix.data[scr.pix.width * y + x]
+  ## Returns the Screen pixel at coordinates (X,Y)
+func `[]=` *(scr :var Screen; x,y :Natural; pix :ColorRGBX) =  scr.pix.data[scr.pix.width * y + x] = pix
+  ## Assigns the Screen pixel at coordinates (X,Y) to the given ColorRGBX value
+iterator pixels *(scr :var Screen) :var ColorRGBX=
+  ## Iterate through all pixels of the screen, and yield each pixel as modifiable.
+  for pix in iter.twoD(scr.pix.data, scr.pix.width, scr.pix.height): yield pix
+
+#_______________________________________
+# Post-Processing Management
+#___________________
+proc addPost *(scr :var Screen; frag :paths.Path | string) :void=  scr.post.add gl.newShaderProg(TriVert, frag)
+  ## Adds the given fragment shader to the Post-Processing effects list of the screen
+  ## Interprets strings as glsl-code, and Paths are read with readFile to access their code.
+
+#_______________________________________
+# Pixel buffer upload
 #___________________
 proc uploadInit (scr :var Screen) :void=
   ## Uploads the pixels data of the screen for the first time into OpenGL, and initializes its format.
@@ -53,12 +78,73 @@ proc uploadInit (scr :var Screen) :void=
     typ            = gl.UnsignedByte,
     pixels         = scr.pix.data,
     ) # << gl.texImage2D( ... )
+  # Clean-up OpenGL state
+  gl.bindTexture(gl.Tex2D, 0)
+#___________________
+proc upload (scr :var Screen) :void=
+  ## Uploads the current pixel buffer into the GPU
+  gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  gl.texImage2D(   #TODO: Fix the bug in the texSubImage2D function and remove this call
+    target         = gl.Tex2D,
+    level          = 0,
+    internalformat = gl.Rgba8,
+    width          = scr.pix.width,
+    height         = scr.pix.height,
+    border         = 0,
+    format         = gl.Rgba,
+    typ            = gl.UnsignedByte,
+    pixels         = scr.pix.data,
+    ) # << gl.texImage2D( ... )
+  # gl.texSubImage2D(  # TODO: This method is more efficient, but crashes currently
+  #   target  = gl.Tex2D,
+  #   level   = 0,
+  #   xoffset = 0,
+  #   yoffset = 0,
+  #   width   = scr.pix.width,
+  #   height  = scr.pix.height,
+  #   format  = gl.Rgba,
+  #   typ     = gl.UnsignedByte,
+  #   pixels  = scr.pix.data,
+  #   ) # << gl.texSubImage2D( ... )
+  # Clean-up OpenGL state
   gl.bindTexture(gl.Tex2D, 0)
 
+
+#_______________________________________
+# Per-Frame update
+#___________________
+proc update *(scr :var Screen) :void=
+  ## Runs the update process of the screen. Must be called each frame.
+  i.update()
+  scr.win.update()
+  # Upload the pixel data to the GPU
+  scr.upload()
+  # Draw red color screen
+  gl.clearColor(1, 0, 0, 1)
+  gl.clear(gl.ColorBit)
+  # Set the state to draw the Fullscreen Triangle
+  gl.useProgram(scr.tri.shd.id)
+  gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  gl.bindVertexArray(scr.tri.vao)
+  gl.drawArrays(mode = gl.Triangles, first=0, count=3)
+  for shd in scr.post:
+    gl.useProgram(shd.id)
+    gl.drawArrays(mode = gl.Triangles, first=0, count=3)
+  gl.bindVertexArray(0)
+  gl.bindTexture(gl.Tex2D, 0)
+  gl.useProgram(0)
+  # Swap buffers (will display the red color)
+  scr.win.present()
+#___________________
+proc close *(scr :Screen) :bool=  scr.win.close()
+proc term  *(scr :Screen) :void=  scr.win.term()
+
+#_______________________________________
+# Constructors
 #___________________
 proc new (_:typedesc[Triangle];
-    vert    = TriVert;
-    frag    = TriFrag;
+    vert    : string = TriVert;
+    frag    : string = TriFrag;
     pixels  : pixie.Image;
     # mesh = TriMesh;
   ) :Triangle=
@@ -80,7 +166,6 @@ proc new (_:typedesc[Triangle];
   gl.texParameteri(gl.Tex2D, gl.FilterMag, gl.Nearest)
   # Clean-up OpenGL state
   gl.bindTexture(gl.Tex2D, 0)
-
 #___________________
 proc new *(_:typedesc[Screen];
     pixels       : pixie.Image;
@@ -169,71 +254,4 @@ proc new *(_:typedesc[Screen];
     mouseCapture = mouseCapture,
     error        = error,
     ) # << Screen.new( ... )
-
-
-proc upload (scr :var Screen) :void=
-  ## Uploads the current pixel buffer into the GPU
-  gl.bindTexture(gl.Tex2D, scr.tri.tex)
-  gl.texImage2D(   #TODO: Fix the bug in the texSubImage2D function and remove this call
-    target         = gl.Tex2D,
-    level          = 0,
-    internalformat = gl.Rgba8,
-    width          = scr.pix.width,
-    height         = scr.pix.height,
-    border         = 0,
-    format         = gl.Rgba,
-    typ            = gl.UnsignedByte,
-    pixels         = scr.pix.data,
-    ) # << gl.texImage2D( ... )
-  # gl.texSubImage2D(  # TODO: This method is more efficient, but crashes currently
-  #   target  = gl.Tex2D,
-  #   level   = 0,
-  #   xoffset = 0,
-  #   yoffset = 0,
-  #   width   = scr.pix.width,
-  #   height  = scr.pix.height,
-  #   format  = gl.Rgba,
-  #   typ     = gl.UnsignedByte,
-  #   pixels  = scr.pix.data,
-  #   ) # << gl.texSubImage2D( ... )
-  # Clean-up OpenGL state after
-  gl.bindTexture(gl.Tex2D, 0)
-
-#___________________
-proc update *(scr :var Screen) :void=
-  i.update()
-  scr.win.update()
-  # Upload the pixel data to the GPU
-  scr.upload()
-  # Draw red color screen
-  gl.clearColor(1, 0, 0, 1)
-  gl.clear(gl.ColorBit)
-  # Set the state to draw the Fullscreen Triangle
-  gl.useProgram(scr.tri.shd.id)
-  gl.bindTexture(gl.Tex2D, scr.tri.tex)
-  gl.bindVertexArray(scr.tri.vao)
-  gl.drawArrays(mode = gl.Triangles, first=0, count=3)
-  gl.bindVertexArray(0)
-  gl.bindTexture(gl.Tex2D, 0)
-  gl.useProgram(0)
-  # Swap buffers (will display the red color)
-  scr.win.present()
-#___________________
-proc close *(scr :Screen) :bool=  scr.win.close()
-proc term  *(scr :Screen) :void=  scr.win.term()
-
-#_______________________________________
-# Screen Pixels access
-#___________________
-func data *(scr :Screen) :seq[ColorRGBX]=  scr.pix.data
-  ## Alias for accessing the Screen's pixel data
-func `data=` *(scr :var Screen; data :seq[ColorRGBX]) :void=  scr.pix.data = data
-  ## Alias for assigning new pixel data for the Screen
-func `[]` *(scr :Screen; x,y :Natural) :ColorRGBX=  scr.pix.data[scr.pix.width * y + x]
-  ## Returns the Screen pixel at coordinates (X,Y)
-func `[]=` *(scr :var Screen; x,y :Natural; pix :ColorRGBX) =  scr.pix.data[scr.pix.width * y + x] = pix
-  ## Assigns the Screen pixel at coordinates (X,Y) to the given ColorRGBX value
-iterator pixels *(scr :var Screen) :var ColorRGBX=
-  ## Iterate through all pixels of the screen, and yield each pixel as modifiable.
-  for pix in iter.twoD(scr.pix.data, scr.pix.width, scr.pix.height): yield pix
 

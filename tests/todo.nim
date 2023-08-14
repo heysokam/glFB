@@ -2,9 +2,9 @@
 #  glFB  |  Copyright (C) Ivan Mar (sOkam!)  |  MIT  |
 #:____________________________________________________
 # std dependencies
-import std/unittest
+# import std/unittest
 # lib dependencies
-import vkFB as fb
+# import glFB as fb
 
 #_______________________________________
 template test {.dirty.}=

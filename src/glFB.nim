@@ -4,18 +4,14 @@
 import ./glFB/screen ; export screen
 
 #_______________________________________
-# Entry Point
+# Entry Point for the debug example
 #___________________
 when isMainModule:
   from chroma import rgbx
-  # Initialize the Screen
-  var scr = Screen.new(960,540)
-  # Run while the Screen has not been marked for closing
-  while not scr.close():
-    # Generate the pixels on the CPU
-    for pix in scr.pixels:  pix = rgbx(255,255,255,255)
-    # Draw the contents
-    scr.update()
-  # Terminate everything after
-  scr.term()
+
+  var scr = Screen.new(960,540)                         # Initialize the Screen
+  while not scr.close():                                # Run while the Screen has not been marked for closing
+    for pix in scr.pixels: pix = rgbx(255,255,255,255)  # Generate the pixels on the CPU
+    scr.update()                                        # Draw the contents
+  scr.term()                                            # Terminate everything after
 

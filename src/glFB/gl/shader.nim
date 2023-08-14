@@ -15,8 +15,8 @@ type OpenGLObj *{.inheritable.}= object
   id *:uint32
 #____________________
 type ShaderBase * = ref object of OpenGLObj
-  file *:Path    ## File path where this shader is read from
-  src  *:string  ## Source code of the shader
+  file *:paths.Path  ## File path where this shader is read from
+  src  *:string      ## Source code of the shader
 type ShaderVert * = ShaderBase
 type ShaderFrag * = ShaderBase
 type ShaderProg * = ref object of OpenGLObj
@@ -68,7 +68,7 @@ proc newShaderVert *(code :string) :ShaderVert=
   gl.compileShader(result.id)
   result.chk()
 #_____________________________
-proc newShaderVert *(file :Path) :ShaderVert=  newShaderVert(file.string.readFile)
+proc newShaderVert *(file :paths.Path) :ShaderVert=  newShaderVert(file.string.readFile)
   ## Creates and compiles a new ShaderVert from the given source code file.
 
 #__________________________________________________
@@ -85,7 +85,7 @@ proc newShaderFrag *(code :string) :ShaderFrag=
   gl.compileShader(result.id)
   result.chk()
 #_____________________________
-proc newShaderFrag *(file :Path) :ShaderFrag=  newShaderFrag(file.string.readFile)
+proc newShaderFrag *(file :paths.Path) :ShaderFrag=  newShaderFrag(file.string.readFile)
   ## Creates and compiles a new ShaderFrag from the given source code file.
 
 #__________________________________________________
@@ -107,6 +107,21 @@ proc newShaderProg *(vert :ShaderVert; frag :ShaderFrag) :ShaderProg=
   gl.deleteShader(vert.id)
   gl.deleteShader(frag.id)
 #__________________________________________________
+proc newShaderProg *(frag :ShaderFrag) :ShaderProg=
+  ## Creates and compiles a new ShaderProg from the given vert and frag objects.
+  new result
+  # Join fragment and vertex shader into a shader program
+  result.id = gl.createProgram()
+  gl.attachShader(result.id, frag.id)
+  gl.linkProgram(result.id)
+  result.chk()
+  # Delete shaders. Linked to the program, not needed anymore
+  gl.deleteShader(frag.id)
+#__________________________________________________
+proc newShaderProg *(frag :paths.Path | string) :ShaderProg=  frag.newShaderFrag.newShaderProg
+  ## Creates a new ShaderProgram from the given fragment shader.
+  ## Interprets strings as glsl-code, and Paths are read with readFile to access their code.
+#__________________________________________________
 proc newShaderProg *(vertCode, fragCode :string) :ShaderProg=
   ## Creates and compiles a new ShaderProg from the given vert+frag source code strings.
   new result
@@ -114,7 +129,7 @@ proc newShaderProg *(vertCode, fragCode :string) :ShaderProg=
   var frag = fragCode.newShaderFrag
   result = newShaderProg(vert, frag)
 #__________________________________________________
-proc newShaderProg *(vertFile, fragFile :Path) :ShaderProg=
+proc newShaderProg *(vertFile, fragFile :paths.Path) :ShaderProg=
   ## Creates and compiles a new ShaderProg from the given vert+frag source code files.
   new result
   var vert = vertFile.newShaderVert
