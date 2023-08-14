@@ -1,6 +1,8 @@
 #:____________________________________________________
 #  glFB  |  Copyright (C) Ivan Mar (sOkam!)  |  MIT  |
 #:____________________________________________________
+# std dependencies
+import std/os
 # External dependencies
 import pkg/pixie
 # ndk dependencies
@@ -22,14 +24,23 @@ type Window * = ref object
   size   *:UVec2
   title  *:string
 #___________________
+type Triangle * = object
+  shd  *:gl.ShaderProg
+  vao  *:uint32  ## OpenGL VAO handle
+  tex  *:uint32  ## OpenGL Texture handle
+#___________________
 type Screen * = ref object
-  win  *:Window
-  pix  *:pixie.Image
+  win  *:Window              ## Window Object
+  tri  *:Triangle            ## Fullscreen Triangle data
+  pix  *:pixie.Image         ## Pixels Data
+  post *:seq[gl.ShaderProg]  ## Post-Processing shaders
 
 
 #_______________________________________
 # window.nim
 #___________________
+proc resize *(window :Window; W,H :cint) :void {.cdecl.}=
+  gl.viewport(0,0, W,H)
 # Constructor
 proc new *(_:typedesc[Window];
     size         : UVec2;
@@ -85,6 +96,56 @@ func getSize *(w :var Window) :UVec2=  glfw.getWindowSize(w.ct, result.x.iaddr, 
 #_______________________________________
 # screen.nim
 #___________________
+const thisDir  = currentSourcePath().parentDir()
+const shdDir   = thisDir/"shd"
+# Read Triangle data at compile time
+const TriVert  = staticRead( shdDir/"tri.vert" )
+const TriFrag  = staticRead( shdDir/"tri.frag" )
+#___________________
+proc uploadInit *(scr :var Screen) :void=
+  ## Uploads the pixels data of the screen for the first time into OpenGL, and initializes its format.
+  ## Should only be called once at init.
+  gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  gl.texImage2D(
+    target         = gl.Tex2D,
+    level          = 0,
+    internalformat = gl.Rgba8,
+    width          = scr.pix.width,
+    height         = scr.pix.height,
+    border         = 0,
+    format         = gl.Rgba,
+    typ            = gl.UnsignedByte,
+    pixels         = scr.pix.data,
+    ) # << gl.texImage2D( ... )
+  gl.bindTexture(gl.Tex2D, 0)
+#___________________
+proc new (_:typedesc[Triangle];
+    vert    = TriVert;
+    frag    = TriFrag;
+    pixels  : pixie.Image;
+    # mesh = TriMesh;
+  ) :Triangle=
+  # Compile+Link the shader
+  result.shd = gl.newShaderProg(vert, frag)
+  # Generate the VAO
+  gl.genVertexArrays(1, result.vao.addr)
+  gl.bindVertexArray(result.vao)
+  gl.bindVertexArray(0)
+  # Generate the Pixels texture
+  # Initialize the texture handle
+  gl.genTextures(1, result.tex.addr)
+  gl.bindTexture(gl.Tex2D, result.tex)
+  # Configure texture Wrapping
+  gl.texParameteri(gl.Tex2D, gl.WrapS, gl.Repeat)
+  gl.texParameteri(gl.Tex2D, gl.WrapT, gl.Repeat)
+  # Configure texture Filtering
+  gl.texParameteri(gl.Tex2D, gl.FilterMin, gl.Nearest)
+  gl.texParameteri(gl.Tex2D, gl.FilterMag, gl.Nearest)
+  # Initial upload
+  # Clean-up OpenGL state
+  gl.bindTexture(gl.Tex2D, 0)
+
+#___________________
 proc new *(_:typedesc[Screen];
     pixels       : pixie.Image;
     title        : string                  = "glFB | Window";
@@ -94,7 +155,7 @@ proc new *(_:typedesc[Screen];
     mousePos     : glfw.CursorPosFun       = nil;
     mouseBtn     : glfw.MouseButtonFun     = nil;
     mouseScroll  : glfw.ScrollFun          = nil;
-    mouseCapture : bool                    = true;
+    mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
   ) :Screen=
   new result
@@ -102,7 +163,7 @@ proc new *(_:typedesc[Screen];
   result.pix = pixels
   # Initialize the window
   result.win = Window.new(
-    size         = uvec2(result.pix.width.uint32,result.pix.height.uint32),
+    size         = uvec2(result.pix.width.uint32, result.pix.height.uint32),
     title        = title,
     resizable    = resizable,
     resize       = resize,
@@ -115,6 +176,9 @@ proc new *(_:typedesc[Screen];
     ) # << Window.new( ... )
   # Initialize OpenGL
   gl.init()
+  gl.viewport(0,0, result.win.size.x.cint, result.win.size.y.cint)
+  # Initialize the triangle
+  result.tri = Triangle.new(TriVert, TriFrag, result.pix)
 #___________________
 proc new *(_:typedesc[Screen];
     W,H          : SomeInteger;
@@ -126,7 +190,7 @@ proc new *(_:typedesc[Screen];
     mousePos     : glfw.CursorPosFun       = nil;
     mouseBtn     : glfw.MouseButtonFun     = nil;
     mouseScroll  : glfw.ScrollFun          = nil;
-    mouseCapture : bool                    = true;
+    mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
   ) :Screen=
   result = Screen.new(
@@ -152,10 +216,10 @@ proc new *(_:typedesc[Screen];
     mousePos     : glfw.CursorPosFun       = nil;
     mouseBtn     : glfw.MouseButtonFun     = nil;
     mouseScroll  : glfw.ScrollFun          = nil;
-    mouseCapture : bool                    = true;
+    mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
   ) :Screen=
-  Screen.new(
+  result = Screen.new(
     pixels       = newImage(W,H),
     title        = title,
     resizable    = resizable,
@@ -169,14 +233,53 @@ proc new *(_:typedesc[Screen];
     ) # << Screen.new( ... )
 
 
+proc upload *(scr :var Screen) :void=
+  ## Uploads the current pixel buffer into the GPU
+  # gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  # gl.texSubImage2D(
+  #   target  = gl.Tex2D,
+  #   level   = 0,
+  #   xoffset = 0,
+  #   yoffset = 0,
+  #   width   = scr.pix.width,
+  #   height  = scr.pix.height,
+  #   format  = gl.Rgba,
+  #   typ     = gl.UnsignedByte,
+  #   pixels  = scr.pix.data,
+  #   ) # << gl.texSubImage2D( ... )
+  # gl.bindTexture(gl.Tex2D, 0)
+  gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  gl.texImage2D(
+    target         = gl.Tex2D,
+    level          = 0,
+    internalformat = gl.Rgba8,
+    width          = scr.pix.width,
+    height         = scr.pix.height,
+    border         = 0,
+    format         = gl.Rgba,
+    typ            = gl.UnsignedByte,
+    pixels         = scr.pix.data,
+    ) # << gl.texImage2D( ... )
+  gl.bindTexture(gl.Tex2D, 0)
+
 
 #___________________
-proc update *(scr :Screen) :void=
+proc update *(scr :var Screen) :void=
   i.update()
   scr.win.update()
-  # Draw red color screen.
+  # Upload the pixel data to the GPU
+  scr.upload()
+  # Draw red color screen
   gl.clearColor(1, 0, 0, 1)
   gl.clear(gl.ColorBit)
+  # Set the state to draw the Fullscreen Triangle
+  gl.useProgram(scr.tri.shd.id)
+  gl.bindTexture(gl.Tex2D, scr.tri.tex)
+  gl.bindVertexArray(scr.tri.vao)
+  gl.drawArrays(mode = gl.Triangles, first=0, count=3)
+  gl.bindVertexArray(0)
+  gl.bindTexture(gl.Tex2D, 0)
+  gl.useProgram(0)
   # Swap buffers (will display the red color)
   scr.win.present()
 #___________________
@@ -219,9 +322,11 @@ template test {.dirty.}=
 when isMainModule:
   # Initialize the Screen
   var scr = Screen.new(960,540)
-  test()
   # Run while the Screen has not been marked for closing
   while not scr.close():
+    # Generate the pixels on the CPU
+    for pix in scr.pixels:  pix = rgbx(255,255,255,255)
+    # Draw the contents
     scr.update()
   # Terminate everything after
   scr.term()
