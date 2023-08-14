@@ -1,8 +1,6 @@
 #:____________________________________________________
 #  glFB  |  Copyright (C) Ivan Mar (sOkam!)  |  MIT  |
 #:____________________________________________________
-# std dependencies
-import std/importutils
 # ndk dependencies
 import nstd/address
 import nmath
@@ -39,7 +37,6 @@ proc new *(_:typedesc[Window];
     mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
   ) :Window=
-  privateAccess(Window)
   # Init GLFW
   doAssert glfw.init(), "Failed to Initialize GLFW"
   # Set OpenGL version to load
