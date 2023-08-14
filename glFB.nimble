@@ -7,7 +7,7 @@ import std/strformat
 #___________________
 # Package
 packageName   = "glFB"
-version       = "0.2.5"
+version       = "0.2.6"
 author        = "sOkam"
 description   = "gl*FB | Tiny Framebuffer with OpenGL"
 license       = "MIT"
@@ -30,6 +30,7 @@ let testsDir  = "tests"
 #___________________
 # Binaries
 backend       = "c"
+installExt    = @["nim"]
 bin           = @[packageName]
 
 #________________________________________
