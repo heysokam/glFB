@@ -36,6 +36,7 @@ proc new (_:typedesc[Window];
     mouseScroll  : glfw.ScrollFun          = nil;
     mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
+    vsync        : bool                    = false;
   ) :Window=
   # Init GLFW
   doAssert glfw.init(), "Failed to Initialize GLFW"
@@ -58,8 +59,9 @@ proc new (_:typedesc[Window];
   discard glfw.setCursorPosCallback(result.ct, mousePos)
   discard glfw.setMouseButtonCallback(result.ct, mouseBtn)
   discard glfw.setScrollCallback(result.ct, mouseScroll)
-  # Set Input mode
+  # Set Mouse Capture and vsync
   if mouseCapture: glfw.setInputMode(result.ct, glfw.Cursor, glfw.CursorDisabled)
+  glfw.swapInterval(vsync.cint)
   # Connect to the OpenGL context.
   glfw.makeContextCurrent(result.ct)
 

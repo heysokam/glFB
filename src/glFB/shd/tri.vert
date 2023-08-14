@@ -16,5 +16,7 @@ void main() {
 
   // vUV.flipVertical(), so that (0,0) is at topleft (OpenGL wants 0,0 at bottomleft)
   // TODO: Flip the triangle vertices instead, and figure out backface drawing
+  // remember:  glClipControl(GL_UPPER_LEFT)  core@gl4.5
+  //            ARB_clip_control extension:  https://registry.khronos.org/OpenGL/extensions/ARB/ARB_clip_control.txt
   vUV.y = 1-vUV.y;
 }

@@ -55,7 +55,8 @@ Screen construction:
   mouseBtn     : glfw.MouseButtonFun     = nil;              # GLFW Input Mouse Button callback.
   mouseScroll  : glfw.ScrollFun          = nil;              # GLFW Input Mouse ScrollWheel callback.
   mouseCapture : bool                    = false;            # Whether to capture the mouse on window launch or not
-  error        : glfw.ErrorFun           = nil;
+  error        : glfw.ErrorFun           = nil;              # GLFW Error callback
+  vsync        : bool                    = false;            # Whether vsync is active or not
 ```
 
 Post-Processing shader example (Simple API):  

@@ -198,6 +198,7 @@ proc new *(_:typedesc[Screen];
     mouseScroll  : glfw.ScrollFun          = nil;
     mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
+    vsync        : bool                    = false;
   ) :Screen=
   new result
   # Initialize the pixel buffer
@@ -214,6 +215,7 @@ proc new *(_:typedesc[Screen];
     mouseScroll  = mouseScroll,
     mouseCapture = mouseCapture,
     error        = error,
+    vsync        = vsync,
     ) # << Window.new( ... )
   # Initialize OpenGL
   gl.init()
@@ -235,6 +237,7 @@ proc new *(_:typedesc[Screen];
     mouseScroll  : glfw.ScrollFun          = nil;
     mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
+    vsync        : bool                    = false;
   ) :Screen=
   result = Screen.new(
     pixels       = newImage(W,H),
@@ -247,6 +250,7 @@ proc new *(_:typedesc[Screen];
     mouseScroll  = mouseScroll,
     mouseCapture = mouseCapture,
     error        = error,
+    vsync        = vsync,
     ) # << Screen.new( ... )
   result.pix.data = pixels
 #___________________
@@ -261,6 +265,7 @@ proc new *(_:typedesc[Screen];
     mouseScroll  : glfw.ScrollFun          = nil;
     mouseCapture : bool                    = false;
     error        : glfw.ErrorFun           = nil;
+    vsync        : bool                    = false;
   ) :Screen=
   result = Screen.new(
     pixels       = newImage(W,H),
@@ -273,5 +278,6 @@ proc new *(_:typedesc[Screen];
     mouseScroll  = mouseScroll,
     mouseCapture = mouseCapture,
     error        = error,
+    vsync        = vsync,
     ) # << Screen.new( ... )
 
