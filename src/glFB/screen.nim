@@ -56,9 +56,19 @@ iterator pixels *(scr :var Screen) :var ColorRGBX=
 #_______________________________________
 # Post-Processing Management
 #___________________
-proc addPost *(scr :var Screen; frag :paths.Path | string) :void=  scr.post.add gl.newShaderProg(TriVert, frag)
+proc addPost *(scr :var Screen; frag :paths.Path | string) :uint32 {.discardable.}=
   ## Adds the given fragment shader to the Post-Processing effects list of the screen
   ## Interprets strings as glsl-code, and Paths are read with readFile to access their code.
+  ## Returns the id handle of the shader, which...
+  ## - ... can be used to remove them at a later time using rmvPost(id).
+  ## - ... Is automatically discarded when not assigned anywhere.
+  scr.post.add gl.newShaderProg(TriVert, frag)
+  result = scr.post[^1].id
+proc rmvPost *(scr :var Screen; id :uint32) :void=
+  ## Removes the given shader id from the Post-Processing effects list.
+  ## Does nothing if the id does not exist in the list.
+  for idx,shd in scr.post:
+    if shd.id == id: scr.post.delete(idx)
 
 #_______________________________________
 # Pixel buffer upload
