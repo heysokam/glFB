@@ -18,7 +18,7 @@ type Window * = ref object
 #_______________________________________
 # Callbacks
 #___________________
-proc resize *(window :Window; W,H :cint) :void {.cdecl.}=
+proc resize *(window :glfw.Window; W,H :cint) :void {.cdecl.}=
   gl.viewport(0,0, W,H)
 
 
@@ -29,7 +29,7 @@ proc new *(_:typedesc[Window];
     size         : UVec2;
     title        : string                  = "glFB | Window";
     resizable    : bool                    = true;
-    resize       : glfw.FrameBufferSizeFun = nil;
+    resize       : glfw.FrameBufferSizeFun = resize;
     key          : glfw.KeyFun             = i.key;
     mousePos     : glfw.CursorPosFun       = nil;
     mouseBtn     : glfw.MouseButtonFun     = nil;

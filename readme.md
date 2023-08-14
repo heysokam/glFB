@@ -7,6 +7,7 @@ The user of the library is fully responsible for how the contents of the pixel b
 ```nim
 import glFB as fb
 
+# Simple API
 var scr = Screen.new(960,540)    # Initialize the Screen object
 while not scr.close():           # Run while the Screen has not been marked for closing
   for pix in scr.pixels:         # Generate the pixels on the CPU
