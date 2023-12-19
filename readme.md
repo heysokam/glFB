@@ -139,3 +139,8 @@ This library applies no GPU acceleration anywhere else, which makes it suitable 
 Coordinate (0,0) is topleft of the screen.  
 OpenGL wants 0,0 to be bottomleft, but glFB changes this in the FST vertex shader, so that the buffer is drawn correctly.  
 
+## TODO
+- [ ] Window size Uniform access
+- [ ] Texture size Uniform access
+- [ ] Time Uniform access
+
