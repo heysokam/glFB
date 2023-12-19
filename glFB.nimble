@@ -23,9 +23,10 @@ requires "pixie"
 
 #___________________
 # Folders
-srcDir        = "src"
-binDir        = "bin"
-let testsDir  = "tests"
+srcDir          = "src"
+binDir          = "bin"
+let testsDir    = "tests"
+let examplesDir = "examples"
 
 #___________________
 # Binaries
@@ -45,9 +46,21 @@ proc runFile (file :string) :void=  file.runFile( "", "" )
   ## Runs file using the nimcr command
 proc runTest (file :string) :void=  file.runFile(testsDir, "--hints:off")
   ## Runs the given test file. Assumes the file is stored in the default testsDir folder
+proc runExample (file :string) :void=  file.runFile(examplesDir, "")
+  ## Runs the given test file. Assumes the file is stored in the default testsDir folder
+template example (name :untyped; descr,file :static string)=
+  ## Generates a task to build+run the given example
+  let sname = astToStr(name)  # string name
+  task name, descr:
+    runExample file
 
 #________________________________________
-# Build tasks
+# Build tasks : Examples
+#___________________
+example wip, "Example WIP : Build+Run the currently Work-In-Progress example.", "wip"
+
+#________________________________________
+# Build tasks : Internal
 #___________________
 task push, "Internal:  Pushes the git repository, and orders to create a new git tag for the package, using the latest version.":
   ## Does nothing when local and remote versions are the same.
