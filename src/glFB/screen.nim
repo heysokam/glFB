@@ -4,6 +4,7 @@
 # std dependencies
 import std/os
 import std/paths
+import std/strformat
 # External dependencies
 import pkg/pixie
 # ndk dependencies
@@ -45,11 +46,15 @@ const DbgFrag  = staticRead( shdDir/"debug.frag" )
 # Individual pixels
 func `[]=` *(scr :var Screen; x,y :Natural; pix :ColorRGBX) =  scr.pix.data[scr.pix.width * y + x] = pix
   ## Assigns the Screen pixel at coordinates (X,Y) to the given ColorRGBX value
-func `[]` *(scr :Screen; x,y :Natural) :ColorRGBX=
+func `[]` *(scr :Screen; x,y :Natural) :var ColorRGBX=
   ## Returns the Screen pixel at coordinates (X,Y)
-  if (scr.pix.width * y + x) > ( (scr.pix.width-1) * (scr.pix.height-1) ): # If (x,y) > (width-1,height-1)
-    raise newException(PixelIOError, "Tried to access a pixel that's out of bounds of the framebuffer.")
-  result = scr.pix.data[scr.pix.width * y + x]
+  if (scr.pix.width * y + x) > ( (scr.pix.width) * (scr.pix.height) ): # If (x,y) > (width-1,height-1)
+    debugEcho (scr.pix.width * y + x)
+    debugEcho ( (scr.pix.width) * (scr.pix.height) )
+    raise newException(PixelIOError, &"Tried to access a pixel that's out of bounds of the framebuffer  ({x},{y}).")
+  try:
+    result = scr.pix.data[scr.pix.width * y + x]
+  except: debugEcho (scr.pix.width * y) + x," <- ",scr.pix.width," * ",y," + ",x
 #___________________
 iterator pixels *(scr :var Screen) :var ColorRGBX=
   ## Iterate through all pixels of the screen, and yield each pixel as modifiable.
